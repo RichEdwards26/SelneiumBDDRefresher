@@ -20,6 +20,8 @@ namespace SelneiumBDDRefresher
         private TestEnv env = new TestEnv();
         public IWebDriver driver;
 
+
+
         public Hooks (IObjectContainer container)
         {
             this.container = container;

@@ -7,11 +7,11 @@ using Protractor;
 
 namespace SelneiumBDDRefresher.PageObjects
 {
-    public class HomePage
+    public class HomePage : PageBase
     {
         private IWebDriver _driver;
         private NgWebDriver _ngWebDriver;
-        public HomePage(IWebDriver driver)
+        public HomePage(IWebDriver driver) : base(driver)
         {
             _driver = driver;
             _ngWebDriver = new NgWebDriver(driver);

@@ -1,0 +1,122 @@
+Docker Setup:
+1. Install docker desktop for windows.
+2. Once installed and it runs (might need to enable hardware virtualisation in the bios)
+3. Right click on sys tray icon, open the settings, select Shared Drives and share the C
+	I disable my docker on startup so i don't mind it having C access while i use it.
+4. Consider upping the processors and memory too if you have capacity.
+	Notes say "please allocate at least 5+Gb of RAM for Docker via Docker Settings > Advanced."
+	I got away with 4GB on my quality kit
+5. Apply.
+
+
+
+Report Portal Install:
+ref:  https://reportportal.io/download
+
+1. Open powershell
+2. Navigate to some folder where you want stuff 
+	e.g. c:\git\ReportPortal
+3. get the file: 
+	docker-compose.yml
+4. In your target folder use 
+	mkdir -p data/elasticsearch
+5. Run:
+	docker-compose -p reportportal up -d --force-recreate
+
+If you get error "b'Drive has not been shared'" - refer to docker setup. - the shared drive isn't set
+
+Get a cup of coffee.
+
+some notes:
+First time will take a good few minutes to download the images from docker hub.
+Subsequent times still take a few minutes for all components to come online.
+The web server starts before everything else so it may look online but if you can't log in, wait longer - **minutes** longer. It's only a subset of your desktop afterall.
+
+How to tell if it is up?
+If you Run: Docker ps
+You'll get a list of services. They all need to be running.  
+When you hit the splash it will list services at the bottom of the page.
+I find it's mongo that takes the longest - you can get the web splash page without mongo but error while logging in.
+
+
+...All online? coffee in hand?
+
+Go to:
+
+http://127.0.0.1:8080
+or 
+http://localhost:8080
+same difference
+
+Default credentials are superadmin\erebus
+
+
+
+Let's connect automation framework to report portal.
+
+1. From Nuget Download ReportPortal.Sepcflow, ReportPortal.Shared and ReportPortal.Client
+2. Add "using ReportPortal" to your hooks.
+3. From the RP GUI, Get the UUID (like an API key)
+	Log in, top right corner, select the user icon, select profile then grab the UUID.
+3. Add ReportPortal.config.json to the root project directory and configure it to your server and UUID
+	Refer to github for a copy: https://github.com/reportportal/agent-net-specflow
+	Make sure you set properties to "copy always"
+	Remember to set the project name as well
+
+4. Run a test. See if appears in RP
+(if can appear in Launches or Debug depending on your json values)
+
+
+TAGS!
+The config.json is how your file runs.
+We used a powershell script embedded in the CI which would change the json before the run. that way we can calibrate for things like environment, pipe name, version, etc...
+
+
+
+
+Screenshots are useful, right:
+Add this to your project...
+
+       private void TakeScreenshot(NgWebDriver driver, FeatureContext featureContext, ScenarioContext scenarioContext)
+        {
+            try
+            {
+                Console.WriteLine("Trying to take screenshot");
+                _screenShotFileName = string.Format("error_{0}_{1}_{2}",
+                    featureContext.FeatureInfo.Title.ToIdentifier(),
+                    scenarioContext.ScenarioInfo.Title.Substring(0, 7),
+                    DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+
+                var artifactDirectory = Path.Combine(Directory.GetCurrentDirectory(), "testresults");
+                if (!Directory.Exists(artifactDirectory))
+                    Directory.CreateDirectory(artifactDirectory);
+
+                if (!(driver.WrappedDriver is ITakesScreenshot takesScreenshot)) return;
+                var screenshot = takesScreenshot.GetScreenshot();
+
+                _screenshotFilePath = Path.Combine(artifactDirectory, _screenShotFileName + "_screenshot.png");
+
+                screenshot.SaveAsFile(_screenshotFilePath);
+
+                Console.WriteLine("Screenshot: {0}", new Uri(_screenshotFilePath));
+                try
+                {
+                    //upload screenshot of the error to report.portal
+                    Bridge.LogMessage(LogLevel.Info, "screenshot_of_final_state {rp#file#" + _screenshotFilePath + "}");
+                }
+                //no error - no fail.
+                catch
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error while taking screenshot: {0}", ex);
+            }
+        }
+
+
+
+Custom log messages? - No problem
+ Bridge.LogMessage(LogLevel.Info, "url_of_final_state " + _ngDriver.WrappedDriver.Url);
+

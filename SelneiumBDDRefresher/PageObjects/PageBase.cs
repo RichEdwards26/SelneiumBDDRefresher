@@ -6,6 +6,9 @@ namespace SelneiumBDDRefresher.PageObjects
 {
     public class PageBase
     {
+        public PageBase(IWebDriver driver)
+        {
+        }
 
         public void ClearAndSetField(IWebElement field, string text)
         {

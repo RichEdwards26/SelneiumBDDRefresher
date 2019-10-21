@@ -12,8 +12,8 @@ namespace SelneiumBDDRefresher.PageObjects
         private string pageUrlExt = "/register";
         public string pageUrl;
         private IWebDriver _driver;
-
-        public SignUpPage(IWebDriver driver, IObjectContainer container)
+        
+        public SignUpPage(IWebDriver driver, IObjectContainer container) : base(driver)
         {
             _driver = driver;
             pageUrl = container.Resolve<TestEnv>().BaseUrl + pageUrlExt;
