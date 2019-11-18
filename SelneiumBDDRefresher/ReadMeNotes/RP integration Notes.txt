@@ -25,6 +25,9 @@ ref:  https://reportportal.io/download
 
 If you get error "b'Drive has not been shared'" - refer to docker setup. - the shared drive isn't set
 
+To stop RP:
+	docker-compose -p reportportal down --rmi -v --remove-orphans
+
 Get a cup of coffee.
 
 some notes:
