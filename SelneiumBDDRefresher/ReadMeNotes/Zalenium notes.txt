@@ -1,0 +1,129 @@
+Zalenium Notes
+
+https://opensource.zalando.com/zalenium/
+
+...Zaleni-wah?
+What is it and why? 
+It's a selenium grid docker image that AUTO SCALES browser-docker-selenium-node-images to your needs.  Think a docker image that spawns docker images.
+What that means you run it (locally or on a remote machine/server), point your FW webdriver to it (details below on how) and run test in parallel.
+Zalenium starts up x NEW linux "vm images" with a browsers installed. (FF and Chrome mainly)
+Where X is the amount you want to parallelise (or multiple people/pipes/builds have running).
+Your one machine can now run 10, 15, 20 (etc..) browsers in parallel.
+
+some more whys:
+- As these are NEW vms each time, you don't get peristent state. Memory is isolated and clear and now chromedriver cannot be deleted errors.
+- They brwosers are in the docker image so YOU control them (no auto updates)
+- They're linux so .net core ready and no windows licenses.
+- Doesn't impact your browser!! You can keep working on your box without killing your NSFW browsing
+- Chrome doesn't get stuck open
+- In some CI tools (like team city) you can't change resolution on build agents  - but as this is YOUR docker image you can. 
+- No admin issues.
+- No client installed security stuff
+- no chrome addin issues... programatically configure your chrome to run the tests
+
+
+It has other bells and whistles to save frmamework complication:
+- Each selenium node can be VNC'ed on to. 
+- You can live-view all tests in one browser window 
+- It can record your run results for you. 
+
+
+And it's free.
+
+
+The biggest feature i'd love to see is for it to start different browser <i>versions</i>. At the moment it's all the same selenium-node docker image... if it could spawn varying browsers on demand that woul be epic.
+
+
+To do:
+
+1.
+install docker and stuff. Read the report portal notes if you need it.
+
+2.
+Powershell these lines: (one after the other)
+	docker pull elgalu/selenium    
+	docker pull dosel/zalenium
+
+
+To start Zalenium:
+	docker run --rm -ti --name zalenium -p 4444:4444 -v /var/run/docker.sock:/var/run/docker.sock -v /tmp/videos:/home/seluser/videos --privileged dosel/zalenium start
+
+note that this docker command ties zalenium to your powershell session!!
+If you want it to run:
+get rid of ti
+get rid of rm
+Or create a dockercompose file for it (sample compose at the very end of these notes)
+
+
+To Stop zalenium:
+    docker stop zalenium
+
+
+
+Have a look at the website on how to configure options (recording, browser stack, etc...):  https://opensource.zalando.com/zalenium/
+
+
+
+
+3. Go to these URLs in chrome:
+http://localhost:4444/dashboard/                   <--- review results
+http://localhost:4444/grid/admin/live  		   <--- watch stuff running live
+http://localhost:4444/grid/admin/live?refresh=20   <--- live stuff that will refresh the page every 20 seconds.
+
+
+
+
+4. 
+Your code is probably using IWebDriver. Change that to RemoteWebDriver  (and add using openqa.selenium.remote)
+
+In hooks, in the before scneario:  (don't forget to decorate the method like i did)
+
+Initiate your driver like this instead:
+  //as a field at the top
+	public driver = new RemoteWebDriver;
+
+// in the before scenario
+            var chromeOptions = new ChromeOptions();
+            chromeOptions.AddArgument("--window-size=1920,1080");
+            chromeOptions.AddArgument("no-sandbox");
+            
+            Uri gridUri = new Uri("http://localhost:4444/wd/hub");
+            var chromeCaps = chromeOptions.ToCapabilities();
+	    driver = new RemoteWebDriver(gridUri, chromeCaps, TimeSpan.FromSeconds(60));
+
+		//then do any other driver setup - RemoteWeb seems to have all the same methods
+
+
+
+
+5. optional approach to running docker if you want it
+DockerCompose foile for Zalenium.  (this is how you configure it - note the environment section)
+
+version: "3.7"
+
+services:
+  zalenium:
+    image: dosel/zalenium
+    user: seluser:<gid> # required when running in a swarm without sudo - use the <gid> of docker group of swarm
+    hostname: zalenium
+    deploy:
+      placement:
+        constraints:
+            - node.role == manager
+    ports:
+        - "4444:4444"
+        - "8000:8000" # port for remote debugging zalenium code
+    networks:
+        - zalenium # attachable overlay network to use
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /tmp/videos:/home/seluser/videos
+    environment:
+        - PULL_SELENIUM_IMAGE=true
+        - ZALENIUM_PROXY_CLEANUP_TIMEOUT=1800
+    command: ["start", "--swarmOverlayNetwork", "STACK_zalenium", "--videoRecordingEnabled", "false"]
+
+networks:
+    zalenium:
+        driver: overlay
+        attachable: true

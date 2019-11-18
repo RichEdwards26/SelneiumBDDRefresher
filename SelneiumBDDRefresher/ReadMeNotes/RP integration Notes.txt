@@ -55,8 +55,8 @@ Default credentials are superadmin\erebus
 Let's connect automation framework to report portal.
 
 1. From Nuget Download ReportPortal.Sepcflow, ReportPortal.Shared and ReportPortal.Client
-2. Add "using ReportPortal" to your hooks.
-3. From the RP GUI, Get the UUID (like an API key)
+2. Add "using ReportPortal;" to top of your hooks.
+3. From the RP GUI, Get the UUID (it's used like an API key)
 	Log in, top right corner, select the user icon, select profile then grab the UUID.
 3. Add ReportPortal.config.json to the root project directory and configure it to your server and UUID
 	Refer to github for a copy: https://github.com/reportportal/agent-net-specflow
